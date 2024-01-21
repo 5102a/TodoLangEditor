@@ -1,8 +1,8 @@
-
 let _wasmModule = {}
 globalThis.wasmModule = {}
 globalThis.CApi = {}
 globalThis.debugPayload = []
+console.log(`1`);
 
 const initCApi = () => {
   if (Object.keys(globalThis.wasmModule).length) {
@@ -52,52 +52,12 @@ globalThis.onDebuggerMessage = (ctx: number, msg: string) => {
     // console.log('parse error', value)
   }
 }
-
-
-// globalThis.cReadDebugMessage = async () => {
-//   let count = 0
-
-//   const payload: string = await new Promise((rs) => {
-
-//     const poll = () => {
-//       if (globalThis.debugPayload.length) {
-//         const payload = globalThis.debugPayload.shift();
-//         if (payload) {
-//           try {
-//             if (JSON.parse(payload.slice(9)).breakpoints.path !== "d:\\hub\\quickjs\\test2.js") {
-//               setTimeout(poll, 20);
-//               return;
-//             }
-//           } catch (error) {
-
-//           }
-//           rs(payload);
-
-//         }
-//       } else if (++count >= 50 * 5) {
-//         rs('');
-//       } else {
-//         setTimeout(poll, 20);
-//       }
-//     }
-
-//     setTimeout(poll, 20);
-//   });
-
-//   count = 0;
-
-//   console.log("payload:", payload, globalThis.debugPayload.length);
-
-
-
-//   if (payload === '') {
-//     return 0;
-//   }
-
-//   return payload;
-// }
-
+let inited = false
 const handleInit = async () => {
+  if (inited) {
+    return
+  }
+  inited = true
   const init = await import('./main.js')
   // 调用 Wasm 模块中的函数
   await init(_wasmModule);
@@ -117,7 +77,7 @@ const handleDebugMessage = async (data) => {
   // console.log('handleDebugMessage:', payload);
   if (type === 'eval') {
     const ret = await globalThis.CApi.eval(payload)
-    // console.log('eval-value:', ret);
+    console.log('eval-value:', ret);
   } else {
     // 保存 DAP 消息
     globalThis.debugPayload.push(payload)

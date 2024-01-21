@@ -1,12 +1,15 @@
 const path = require('path');
 const htmlWebpackPlugin = require('html-webpack-plugin');
 const copy = require('copy-webpack-plugin');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+
+const APP_DIR = path.resolve(__dirname, './src');
+const MONACO_DIR = path.resolve(__dirname, './node_modules');
+
 module.exports = {
   mode: 'development',
   entry: {
     app: './src/index.tsx',
-    'editor.worker': 'monaco-editor-core/esm/vs/editor/editor.worker.js',
-    todoLangWorker: './src/todo-lang/todolang.worker.ts',
     worker: './src/worker.ts'
   },
   devServer: {
@@ -19,18 +22,6 @@ module.exports = {
   },
   output: {
     globalObject: 'self',
-    filename: (chunkData) => {
-      switch (chunkData.chunk.name) {
-        case 'editor.worker':
-          return 'editor.worker.js';
-        case 'todoLangWorker':
-          return 'todoLangWorker.js';
-        case 'worker':
-          return 'worker.js';
-        default:
-          return 'bundle.[hash].js';
-      }
-    },
     path: path.resolve(__dirname, 'dist')
   },
   resolve: {
@@ -49,6 +40,11 @@ module.exports = {
       {
         test: /\.css/,
         use: ['style-loader', 'css-loader']
+      },
+      {
+        test: /\.ttf$/,
+        include: MONACO_DIR,
+        use: ['file-loader'],
       }
     ]
   },
@@ -56,6 +52,10 @@ module.exports = {
   plugins: [
     new htmlWebpackPlugin({
       template: './src/index.html'
+    }),
+    new MonacoWebpackPlugin({
+      // available options are documented at https://github.com/microsoft/monaco-editor/blob/main/webpack-plugin/README.md#options
+      languages: ['javascript']
     }),
     new copy({
       patterns: [
@@ -67,22 +67,6 @@ module.exports = {
           from: 'src/main.js',
           to: 'main.js'
         },
-        {
-          from: 'src/main.wasm.js',
-          to: 'main.wasm.js'
-        },
-        {
-          from: 'src/main.js.symbols',
-          to: 'main.js.symbols'
-        },
-        {
-          from: 'src/main.wasm.symbols',
-          to: 'main.wasm.symbols'
-        },
-        {
-          from: 'src/main.wasm.map',
-          to: 'main.wasm.map'
-        }
       ]
     })
   ]
