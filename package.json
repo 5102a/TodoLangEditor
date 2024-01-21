@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "TodoLang editor",
   "scripts": {
-    "start": "webpack-dev-server --hot --open",
+    "start": "webpack-dev-server --hot --open --no-caches",
     "antlr4ts": "antlr4ts ./TodoLangGrammar.g4 -o ./src/ANTLR"
   },
   "author": "Open",
@@ -15,6 +15,7 @@
     "react-dom": "^16.8.6"
   },
   "devDependencies": {
+    "copy-webpack-plugin": "^6.0.0",
     "@types/react": "^16.8.12",
     "@types/react-dom": "^16.8.3",
     "antlr4ts-cli": "^0.5.0-alpha.3",
