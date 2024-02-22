@@ -10,7 +10,11 @@ const worker = new Worker('./worker.js', {
 console.log(222);
 
 let reqId = 1;
-function sendBreakpointMessage(list: any[], file = 'index.js') {
+let inited = false;
+function sendBreakpointMessage(
+  list: any[],
+  file = 'd:\\hub\\quickjs\\index.js'
+) {
   const breakpoints: any[] = [];
 
   for (let bpList of list) {
@@ -90,24 +94,59 @@ function sendThreadMessage(envelope: any) {
     payload: length + json + '\n'
   });
 }
+const defaultInput = `let count = 1
+let aa = 11
+const b = aa + count
+function fibNumber (n) {
+  count++
+  for (let i = 1; i < n; i++) {
+    count *= i
 
+  }
+  return count
+}
+b
+const cc = fibNumber(10)
+cc`;
+let queue = [];
+// let queue = [
+//   {
+//     type: 'debug_message',
+//     payload: JSON.stringify({
+//       type: 'eval',
+//       payload: defaultInput
+//     })
+//   },
+//   {
+//     type: 'debug_message',
+//     payload:
+//       '{"type":"info","payload":"0000008b\\n{\\"type\\":\\"breakpoints\\",\\"breakpoints\\":{\\"path\\":\\"index.js\\",\\"breakpoints\\":[{\\"line\\":1,\\"column\\":1},{\\"line\\":3,\\"column\\":1},{\\"line\\":5,\\"column\\":1}]}}\\n"}'
+//   },
+//   {
+//     type: 'debug_message',
+//     payload:
+//       '{"type":"info","payload":"00000033\\n{\\"type\\":\\"stopOnException\\",\\"stopOnException\\":false}\\n"}'
+//   },
+//   {
+//     type: 'debug_message',
+//     payload:
+//       '{"type":"info","payload":"00000014\\n{\\"type\\":\\"continue\\"}\\n"}'
+//   }
+// ];
+setInterval(() => {
+  if (queue.length) {
+    const length = queue.length;
+    // console.log(JSON.stringify(queue));
+
+    for (let i = 0; i < length; i++) {
+      worker.postMessage(queue.shift());
+    }
+  }
+}, 1000);
 const App = () => {
   const [res, setRes] = useState('');
-  const [lines, setLines] = useState('1,3,5');
-  const [input, setInput] = useState(
-    `
-let count = 0
-
-function fibNumber(n) {
-    count++
-    if (n == 1 || n == 2)
-        return 1
-
-    return fibNumber(n - 1) + fibNumber(n - 2)
-}
-
-fibNumber(3)`
-  );
+  const [lines, setLines] = useState('13');
+  const [input, setInput] = useState(defaultInput);
   const ref = useRef<any>();
 
   let divNode;
@@ -161,32 +200,76 @@ fibNumber(3)`
 
       switch (type) {
         case 'debug_message':
-          // const id = setInterval(() => {
-          //   if (ws.readyState === WebSocket.OPEN) {
-          //     ws.send(payload);
-          //     clearInterval(id);
-          //   }
-          // }, 20);
+          const id = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(payload);
+              clearInterval(id);
+            }
+          }, 20);
           break;
         case 'inited':
-          // ws = new WebSocket('ws://127.0.0.1:8091');
+          ws = new WebSocket('ws://127.0.0.1:8091');
 
-          // ws.onopen = function () {
-          //   console.log('websocket open');
-          // };
+          ws.onopen = function () {
+            console.log('websocket open');
+          };
 
-          // ws.onclose = function () {
-          //   worker.postMessage({
-          //     type: 'close'
-          //   });
-          // };
+          ws.onclose = function () {
+            worker.postMessage({
+              type: 'close'
+            });
+          };
 
-          // ws.onmessage = function (event) {
-          //   worker.postMessage({
-          //     type: 'debug_message',
-          //     payload: event.data
-          //   });
-          // };
+          ws.onmessage = function (event) {
+            // if (reqId === -1) {
+            //   debugger;
+            //   reqId = event.data;
+            // }
+            // console.log('vscode send', event.data);
+            const envelope = event.data;
+            let json = JSON.parse(envelope);
+
+            if (json.payload) {
+              try {
+                // const a = JSON.parse(json.payload.slice(9));
+                // if (a.breakpoints.path.endsWith('index.js')) {
+                //   a.breakpoints.path = 'index.js';
+                //   const encoder = new TextEncoder();
+                //   const jsonBuffer = encoder.encode(JSON.stringify(a));
+                //   // not efficient, but protocol is then human readable.
+                //   // json = 1 line json + new line
+                //   let messageLength = jsonBuffer.byteLength + 1;
+                //   let length = '00000000' + messageLength.toString(16) + '\n';
+                //   length = length.substr(length.length - 9);
+                //   json.payload = length + JSON.stringify(a) + '\n';
+                // }
+              } catch (error) {}
+            }
+
+            const data = JSON.stringify(json);
+            // console.log(data);
+            // console.log(json.payload);
+            // [{"type":"debug_message","payload":"{\"type\":\"info\",\"payload\":\"0000008b\\n{\\\"type\\\":\\\"breakpoints\\\",\\\"breakpoints\\\":{\\\"path\\\":\\\"index.js\\\",\\\"breakpoints\\\":[{\\\"line\\\":1,\\\"column\\\":1},{\\\"line\\\":3,\\\"column\\\":1},{\\\"line\\\":5,\\\"column\\\":1}]}}\\n\"}"},{"type":"debug_message","payload":"{\"type\":\"info\",\"payload\":\"00000033\\n{\\\"type\\\":\\\"stopOnException\\\",\\\"stopOnException\\\":false}\\n\"}"},{"type":"debug_message","payload":"{\"type\":\"info\",\"payload\":\"00000014\\n{\\\"type\\\":\\\"continue\\\"}\\n\"}"}].forEach(element => {
+
+            // });
+            if (json.type === 'eval') {
+              setTimeout(() => {
+                queue.push({
+                  type: 'debug_message',
+                  payload: data
+                });
+              }, 1000);
+            } else {
+              queue.push({
+                type: 'debug_message',
+                payload: data
+              });
+            }
+            // queue.push({
+            //   type: 'debug_message',
+            //   payload: data
+            // });
+          };
           break;
         default:
           break;
@@ -196,6 +279,22 @@ fibNumber(3)`
     worker.postMessage({
       type: 'init'
     });
+
+    // setTimeout(() => {
+    //   if (!inited) {
+    //     inited = true;
+    //   } else {
+    //     return;
+    //   }
+    //   if (queue.length) {
+    //     const length = queue.length;
+    //     console.log(JSON.stringify(queue));
+
+    //     for (let i = 0; i < length; i++) {
+    //       worker.postMessage(queue.shift());
+    //     }
+    //   }
+    // }, 1000);
   }, []);
 
   return (
@@ -224,13 +323,12 @@ fibNumber(3)`
                     .map((item) => ({ line: parseInt(item), column: 1 }))
                 ),
                 sendStopOnException(),
-                sendCmdStackTrace(),
-                sendCmdScopes(),
-                sendCmdVariables(),
+                // sendCmdStackTrace(),
+                // sendCmdScopes(),
+                // sendCmdVariables(),
                 sendContinue()
               ];
               list.forEach((v) => {
-                console.log('前端请求', v);
                 worker.postMessage({
                   type: 'debug_message',
                   payload: v
@@ -243,6 +341,21 @@ fibNumber(3)`
                   payload: input
                 })
               });
+              // setTimeout(() => {
+              //   if (!inited) {
+              //     inited = true;
+              //   } else {
+              //     return;
+              //   }
+              //   if (queue.length) {
+              //     const length = queue.length;
+              //     console.log(JSON.stringify(queue));
+
+              //     for (let i = 0; i < length; i++) {
+              //       worker.postMessage(queue.shift());
+              //     }
+              //   }
+              // }, 1000);
             }}
           >
             调试
@@ -264,7 +377,8 @@ fibNumber(3)`
                 sendContinue(),
                 sendCmdStackTrace(),
                 sendCmdScopes(),
-                sendCmdVariables()
+                sendCmdVariables({ variablesReference: 1 }),
+                sendCmdVariables({ variablesReference: 2 })
               ];
               list.forEach((v) => {
                 console.log('前端请求1', v);

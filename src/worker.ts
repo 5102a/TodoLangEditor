@@ -74,7 +74,7 @@ const handleInit = async () => {
 const handleDebugMessage = async (data) => {
   const res = JSON.parse(data)
   const { type, payload } = res
-  // console.log('handleDebugMessage:', payload);
+  console.log('handleDebugMessage:', payload);
   if (type === 'eval') {
     const ret = await globalThis.CApi.eval(payload)
     console.log('eval-value:', ret);

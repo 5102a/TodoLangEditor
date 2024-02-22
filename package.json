@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "TodoLang editor",
   "scripts": {
-    "start": "webpack-dev-server --hot --open --no-caches",
+    "start": "webpack-dev-server --hot --no-caches --sourceMap --source-map",
     "antlr4ts": "antlr4ts ./TodoLangGrammar.g4 -o ./src/ANTLR"
   },
   "author": "Open",

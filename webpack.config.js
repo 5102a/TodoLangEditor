@@ -13,23 +13,21 @@ module.exports = {
     worker: './src/worker.ts'
   },
   devServer: {
-    caches: false,
     headers: {
       // 如果需要用到ffmpeg合并视频，需要将COEP和COOP打开，来确保ShareArrayBuffer能够正常使用
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Opener-Policy': 'same-origin',
-    }
+    },
+    clientLogLevel: "none",
+    contentBase: path.resolve(__dirname, 'dist'),
   },
+  devtool: 'cheap-module-source-map',
   output: {
     globalObject: 'self',
     path: path.resolve(__dirname, 'dist')
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.css']
-  },
-  devServer: {
-    contentBase: path.resolve(__dirname, 'dist'),
-    clientLogLevel: "none",
   },
   module: {
     rules: [
